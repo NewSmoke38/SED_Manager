@@ -15,12 +15,19 @@
     "build": "cd frontend && npm run build",
     "start": "cd backend && npm start"
   },
-  "keywords": ["edge", "device", "manager", "ssh", "monitoring"],
+  "keywords": [
+    "edge",
+    "device",
+    "manager",
+    "ssh",
+    "monitoring"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "mongoose": "^8.19.3"
   }
 }
-
-
