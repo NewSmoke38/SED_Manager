@@ -7,12 +7,22 @@ import { ApiError } from '../utils/ApiError.js';
 let devices = [
   {
     id: '1',
-    name: 'Edge Device 1',
+    name: 'Edge Device 1 (Docker)',
     host: 'localhost',
     port: 2222,
     username: 'root',
     password: 'toor',
-    description: 'Primary edge device',
+    description: 'Primary edge device running on Docker',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    name: 'Gaurav\'s Windows Laptop',
+    host: '192.168.0.142',
+    port: 22,
+    username: 'Gaurav Sharma',
+    password: 'ReynaSage11@',
+    description: 'Windows laptop with OpenSSH enabled',
     createdAt: new Date().toISOString()
   }
 ];
@@ -56,6 +66,28 @@ const executeSSHCommand = (device, command) => {
   });
 };
 
+// Helper function to detect OS type
+const detectOS = async (device) => {
+  try {
+    const output = await executeSSHCommand(device, 'uname -s 2>/dev/null || echo Windows');
+    const os = output.trim().toLowerCase();
+    
+    if (os.includes('linux')) return 'linux';
+    if (os.includes('darwin')) return 'macos';
+    if (os.includes('windows')) return 'windows';
+    
+    // Try Windows-specific command
+    try {
+      await executeSSHCommand(device, 'ver');
+      return 'windows';
+    } catch (e) {
+      return 'linux'; // default to linux
+    }
+  } catch (error) {
+    return 'linux';
+  }
+};
+
 // Helper function to check device online status
 const checkDeviceStatus = async (device) => {
   try {
@@ -66,7 +98,160 @@ const checkDeviceStatus = async (device) => {
   }
 };
 
-// Helper function to parse metrics
+// Windows-specific parsers
+const parseWindowsMemory = (output) => {
+  try {
+    // Parse wmic /format:list output: Key=Value format
+    let freeMemKB = 0;
+    let totalMemKB = 0;
+    
+    const lines = output.split('\n');
+    for (let line of lines) {
+      if (line.includes('FreePhysicalMemory=')) {
+        freeMemKB = parseInt(line.split('=')[1]);
+      } else if (line.includes('TotalVisibleMemorySize=')) {
+        totalMemKB = parseInt(line.split('=')[1]);
+      }
+    }
+    
+    if (totalMemKB > 0) {
+      const freeMB = freeMemKB / 1024;
+      const totalMB = totalMemKB / 1024;
+      const usedMB = totalMB - freeMB;
+      const usedPercent = Math.round((usedMB / totalMB) * 100);
+      
+      return {
+        total: `${(totalMB / 1024).toFixed(2)} GB`,
+        used: `${(usedMB / 1024).toFixed(2)} GB`,
+        free: `${(freeMB / 1024).toFixed(2)} GB`,
+        available: `${(freeMB / 1024).toFixed(2)} GB`,
+        usedPercent: `${usedPercent}%`
+      };
+    }
+  } catch (e) {
+    console.error('Error parsing Windows memory:', e);
+  }
+  return { total: 'N/A', used: 'N/A', free: 'N/A', available: 'N/A', usedPercent: 'N/A' };
+};
+
+const parseWindowsCPU = (output) => {
+  try {
+    // Parse wmic /format:list output: LoadPercentage=value
+    const lines = output.split('\n');
+    for (let line of lines) {
+      if (line.includes('LoadPercentage=')) {
+        const load = parseInt(line.split('=')[1]);
+        if (!isNaN(load)) {
+          return {
+            usedPercent: `${load}%`,
+            userPercent: `${Math.round(load * 0.7)}%`,
+            systemPercent: `${Math.round(load * 0.3)}%`,
+            loadAverage: { '1min': 'N/A', '5min': 'N/A', '15min': 'N/A' },
+            processes: []
+          };
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Error parsing Windows CPU:', e);
+  }
+  return {
+    usedPercent: 'N/A',
+    userPercent: 'N/A',
+    systemPercent: 'N/A',
+    loadAverage: { '1min': 'N/A', '5min': 'N/A', '15min': 'N/A' },
+    processes: []
+  };
+};
+
+const parseWindowsProcesses = (output) => {
+  try {
+    const lines = output.split('\n').filter(l => l.trim()).slice(1); // Skip header
+    const processes = [];
+    
+    for (let i = 0; i < Math.min(5, lines.length); i++) {
+      const line = lines[i].trim();
+      if (line) {
+        const parts = line.split(/\s+/);
+        if (parts.length >= 2) {
+          processes.push({
+            pid: parts[1],
+            user: 'N/A',
+            cpu: 'N/A',
+            memory: parts[0],
+            command: parts.slice(2).join(' ') || parts[0]
+          });
+        }
+      }
+    }
+    
+    return processes;
+  } catch (e) {
+    return [];
+  }
+};
+
+const parseWindowsDisk = (output) => {
+  try {
+    // Parse wmic /format:list output
+    const lines = output.split('\n');
+    const filesystems = [];
+    let currentDisk = {};
+    
+    for (let line of lines) {
+      line = line.trim();
+      if (line.includes('Caption=')) {
+        if (currentDisk.Caption) {
+          // Process previous disk
+          if (currentDisk.Size && currentDisk.FreeSpace) {
+            const total = parseInt(currentDisk.Size) / (1024 * 1024 * 1024);
+            const free = parseInt(currentDisk.FreeSpace) / (1024 * 1024 * 1024);
+            const used = total - free;
+            const usedPercent = total > 0 ? Math.round((used / total) * 100) : 0;
+            
+            filesystems.push({
+              filesystem: currentDisk.Caption,
+              size: `${total.toFixed(2)}G`,
+              used: `${used.toFixed(2)}G`,
+              available: `${free.toFixed(2)}G`,
+              usedPercent: `${usedPercent}%`,
+              mountedOn: currentDisk.Caption
+            });
+          }
+        }
+        currentDisk = { Caption: line.split('=')[1] };
+      } else if (line.includes('FreeSpace=')) {
+        currentDisk.FreeSpace = line.split('=')[1];
+      } else if (line.includes('Size=')) {
+        currentDisk.Size = line.split('=')[1];
+      }
+    }
+    
+    // Process last disk
+    if (currentDisk.Caption && currentDisk.Size && currentDisk.FreeSpace) {
+      const total = parseInt(currentDisk.Size) / (1024 * 1024 * 1024);
+      const free = parseInt(currentDisk.FreeSpace) / (1024 * 1024 * 1024);
+      const used = total - free;
+      const usedPercent = total > 0 ? Math.round((used / total) * 100) : 0;
+      
+      filesystems.push({
+        filesystem: currentDisk.Caption,
+        size: `${total.toFixed(2)}G`,
+        used: `${used.toFixed(2)}G`,
+        available: `${free.toFixed(2)}G`,
+        usedPercent: `${usedPercent}%`,
+        mountedOn: currentDisk.Caption
+      });
+    }
+    
+    return { filesystems };
+  } catch (e) {
+    console.error('Error parsing Windows disk:', e);
+    return { filesystems: [] };
+  }
+};
+
+// Linux-specific parsers
 const parseMemoryInfo = (output) => {
   const lines = output.split('\n');
   const memLine = lines.find(l => l.includes('Mem:'));
@@ -264,23 +449,51 @@ export const getDeviceMetrics = asyncHandler(async (req, res) => {
       return res.status(200).json(new ApiResponse(200, { status }, 'Device is offline'));
     }
     
-    // Collect all metrics in parallel
-    const [memoryOutput, topOutput, loadAvgOutput, diskOutput, networkOutput] = await Promise.all([
-      executeSSHCommand(device, 'free -m'),
-      executeSSHCommand(device, 'top -bn1 | head -20'),
-      executeSSHCommand(device, 'cat /proc/loadavg | awk \'{print $1, $2, $3}\''),
-      executeSSHCommand(device, 'df -h'),
-      executeSSHCommand(device, 'ifconfig || ip -s link')
-    ]);
+    // Detect OS type
+    const osType = await detectOS(device);
+    console.log(`Device ${device.name} OS: ${osType}`);
     
-    const metrics = {
-      status,
-      memory: parseMemoryInfo(memoryOutput),
-      cpu: parseCPUInfo(topOutput, loadAvgOutput),
-      disk: parseDiskInfo(diskOutput),
-      network: parseNetworkInfo(networkOutput),
-      timestamp: new Date().toISOString()
-    };
+    let metrics;
+    
+    if (osType === 'windows') {
+      // Windows-specific commands
+      const [memoryOutput, cpuOutput, processOutput, diskOutput] = await Promise.all([
+        executeSSHCommand(device, 'wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /format:list').catch(() => ''),
+        executeSSHCommand(device, 'wmic cpu get loadpercentage /format:list').catch(() => ''),
+        executeSSHCommand(device, 'tasklist').catch(() => ''),
+        executeSSHCommand(device, 'wmic logicaldisk get caption,freespace,size /format:list').catch(() => '')
+      ]);
+      
+      const cpuData = parseWindowsCPU(cpuOutput);
+      cpuData.processes = parseWindowsProcesses(processOutput);
+      
+      metrics = {
+        status,
+        memory: parseWindowsMemory(memoryOutput),
+        cpu: cpuData,
+        disk: parseWindowsDisk(diskOutput),
+        network: { interfaces: [] }, // Network metrics for Windows need different approach
+        timestamp: new Date().toISOString()
+      };
+    } else {
+      // Linux/Unix commands
+      const [memoryOutput, topOutput, loadAvgOutput, diskOutput, networkOutput] = await Promise.all([
+        executeSSHCommand(device, 'free -m'),
+        executeSSHCommand(device, 'top -bn1 | head -20'),
+        executeSSHCommand(device, 'cat /proc/loadavg | awk \'{print $1, $2, $3}\''),
+        executeSSHCommand(device, 'df -h'),
+        executeSSHCommand(device, 'ifconfig || ip -s link')
+      ]);
+      
+      metrics = {
+        status,
+        memory: parseMemoryInfo(memoryOutput),
+        cpu: parseCPUInfo(topOutput, loadAvgOutput),
+        disk: parseDiskInfo(diskOutput),
+        network: parseNetworkInfo(networkOutput),
+        timestamp: new Date().toISOString()
+      };
+    }
     
     res.status(200).json(new ApiResponse(200, metrics, 'Metrics retrieved successfully'));
   } catch (error) {
