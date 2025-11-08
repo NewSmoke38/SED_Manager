@@ -1,33 +1,31 @@
 {
-  "name": "edge-device-manager",
+  "name": "secure-edge-device-manager",
   "version": "1.0.0",
-  "description": "Secure Edge Device Manager - Monitor and manage simulated edge devices",
-  "private": true,
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
+  "description": "A lightweight web platform to remotely monitor and manage simulated edge devices over SSH",
+  "main": "index.js",
   "scripts": {
-    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
-    "build": "cd frontend && npm run build",
-    "start": "cd backend && npm start"
+    "start:backend": "cd backend && npm start",
+    "build:frontend": "cd frontend && npm run build",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker build -t edge-device .",
+    "test": "bash test-system.sh"
   },
   "keywords": [
-    "edge",
-    "device",
-    "manager",
+    "edge-computing",
+    "device-management",
     "ssh",
-    "monitoring"
+    "monitoring",
+    "dashboard",
+    "iot"
   ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
-  },
-  "dependencies": {
-    "mongoose": "^8.19.3"
   }
 }

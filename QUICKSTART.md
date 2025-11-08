@@ -1,166 +1,150 @@
-# 🚀 Quick Start Guide
+# Quick Start Guide
 
-Get your Edge Device Manager running in 3 minutes!
+Get up and running in 5 minutes! 🚀
 
-## Step 1: Verify Docker Container is Running
-
-Make sure your simulated edge device container is running:
+## Step 1: Start the Edge Device (Docker)
 
 ```bash
+# Build the Docker image
+docker build -t edge-device .
+
+# Run the container
+docker run -d -p 2222:22 --name edge-device-1 edge-device
+
+# Verify it's running
 docker ps
 ```
 
-You should see something like:
-
+Expected output:
 ```
-CONTAINER ID   IMAGE               PORTS                     NAMES
-04d6fd5f92b2   sim-device:latest   0.0.0.0:2222->22/tcp      my-edge-device-1
+CONTAINER ID   IMAGE         COMMAND                  CREATED          STATUS          PORTS                  NAMES
+xxxxxxxxxxxxx  edge-device   "/usr/sbin/sshd -D"      5 seconds ago    Up 4 seconds    0.0.0.0:2222->22/tcp   edge-device-1
 ```
 
-If not running, start it:
+## Step 2: Start the Backend
 
 ```bash
-docker run -d --name my-edge-device-1 -p 2222:22 sim-device:latest
-```
-
-## Step 2: Run Setup Script
-
-From the project root directory:
-
-```bash
-./setup.sh
-```
-
-This will:
-- Create the backend `.env` configuration file
-- Install all dependencies for backend and frontend
-- Set up the project structure
-
-**OR** do it manually:
-
-```bash
-# Create .env file
 cd backend
-cp .env.example .env
-cd ..
 
-# Install all dependencies
+# Install dependencies (first time only)
 npm install
-cd backend && npm install && cd ..
-cd frontend && npm install && cd ..
-```
 
-## Step 3: Start the Application
-
-```bash
+# Start the server
 npm run dev
 ```
 
-This starts both:
-- **Backend API** on `http://localhost:3001`
-- **Frontend** on `http://localhost:3000`
+Expected output:
+```
+MongoDB connection skipped - using in-memory storage
+🚀 HTTP Server is running at port: 8000
+   API: http://localhost:8000/api/devices
+🔌 WebSocket Server running on port: 3001
+```
+
+## Step 3: Start the Frontend
+
+Open a new terminal:
+
+```bash
+cd frontend
+
+# Install dependencies (first time only)
+npm install
+
+# Start the dev server
+npm run dev
+```
+
+Expected output:
+```
+  VITE v5.1.4  ready in 500 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: use --host to expose
+```
 
 ## Step 4: Access the Dashboard
 
-Open your browser to:
-
-```
-http://localhost:3000
-```
+Open your browser and go to: **http://localhost:3000**
 
 You should see:
-- ✅ Your edge device showing as "Online"
-- 📊 Real-time metrics (CPU, Memory, Disk)
-- 📈 Live charts updating every few seconds
+- ✅ Edge Device 1 listed
+- ✅ Online status (green badge)
+- ✅ Real-time CPU, Memory, and Disk metrics
+- ✅ Buttons for "View Details" and "SSH Terminal"
 
-## Step 5: Try the Features
+## Step 5: Test Features
 
 ### View Device Details
-Click **"View Details"** to see:
-- Interactive CPU/Memory charts
-- Detailed system metrics
-- Top running processes
-- System logs
+1. Click **"View Details"** on the device card
+2. See real-time charts updating every 3 seconds
+3. Check CPU & Memory graphs
+4. View disk usage, top processes, and system logs
 
 ### Open SSH Terminal
-Click **"SSH Terminal"** to:
-- Get a live terminal in your browser
-- Run commands like `df -h`, `free -m`, `top`
-- Full interactive shell access
+1. Click **"SSH Terminal"** button
+2. Wait for "Connected successfully!" message
+3. Try commands:
+   ```bash
+   ls -la
+   top
+   free -m
+   df -h
+   ```
+4. Type `exit` to close the SSH session
 
-## 🎯 Test Commands in Terminal
+## 🎉 Success!
 
-Once you open the SSH terminal, try these:
+You now have a fully functional edge device monitoring system!
 
+## 🔧 Common Issues
+
+### Issue: Docker container won't start
+**Solution**: Make sure Docker is running:
 ```bash
-# Check disk usage
-df -h
-
-# Check memory
-free -m
-
-# View processes
-top -n 1
-
-# Check network interfaces
-ip addr
-
-# View system info
-uname -a
-
-# Exit when done
-exit
+docker ps
+# If error, start Docker Desktop
 ```
 
-## 🔧 Troubleshooting
+### Issue: Backend shows MongoDB error
+**Solution**: This is normal! The app works fine without MongoDB. It uses in-memory storage.
 
-### Port 3000 already in use?
-```bash
-# Kill process on port 3000
-lsof -ti:3000 | xargs kill -9
+### Issue: Frontend shows "Device is offline"
+**Solution**: 
+1. Check Docker container is running: `docker ps`
+2. Test SSH manually: `ssh root@localhost -p 2222` (password: toor)
+3. Restart backend: `Ctrl+C` then `npm run dev`
 
-# Or change frontend port in frontend/vite.config.js
-```
+### Issue: SSH Terminal not connecting
+**Solution**:
+1. Verify WebSocket server is running (port 3001)
+2. Check browser console for errors (F12)
+3. Restart both frontend and backend
 
-### Port 3001 already in use?
-```bash
-# Kill process on port 3001
-lsof -ti:3001 | xargs kill -9
+## 🚀 Next Steps
 
-# Or change backend port in backend/.env
-```
+1. **Add more devices**: Run another Docker container on a different port
+   ```bash
+   docker run -d -p 2223:22 --name edge-device-2 edge-device
+   ```
 
-### Can't connect to device?
-```bash
-# Test SSH connection manually
-ssh root@localhost -p 2222
-# Password: toor
+2. **Customize device info**: Edit the device in backend code
+   - File: `backend/src/controllers/device.controller.js`
+   - Look for the `devices` array
 
-# Check container logs
-docker logs my-edge-device-1
-```
+3. **Explore the code**:
+   - Frontend: `frontend/src/pages/`
+   - Backend: `backend/src/controllers/`
+   - Docker: `Dockerfile`
 
-### Dependencies installation failed?
-```bash
-# Clear npm cache
-npm cache clean --force
+## 📚 Need More Help?
 
-# Remove node_modules and reinstall
-rm -rf node_modules backend/node_modules frontend/node_modules
-npm install
-```
+Check the full [README.md](README.md) for:
+- Detailed API documentation
+- Architecture overview
+- Troubleshooting guide
+- Production deployment tips
 
-## 📚 What's Next?
+---
 
-1. **Add More Devices**: Run more Docker containers on different ports (2223, 2224, etc.)
-2. **Customize**: Change colors and themes in `frontend/src/index.css`
-3. **Extend**: Add more metrics or features
-4. **Deploy**: Build for production with `npm run build`
-
-## 🎉 You're All Set!
-
-Your secure edge device manager is now running. Monitor your devices, view metrics, and access terminals—all from one beautiful dashboard.
-
-Need help? Check the full [README.md](./README.md) for detailed documentation.
-
-
+Happy monitoring! 🎯

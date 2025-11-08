@@ -27,8 +27,8 @@ function DeviceDetail() {
   const fetchDevice = async () => {
     try {
       const response = await fetch(`/api/devices/${id}`)
-      const data = await response.json()
-      setDevice(data)
+      const result = await response.json()
+      setDevice(result.data || null)
     } catch (error) {
       console.error('Error fetching device:', error)
     }
@@ -37,15 +37,16 @@ function DeviceDetail() {
   const fetchMetrics = async () => {
     try {
       const response = await fetch(`/api/devices/${id}/metrics`)
-      const data = await response.json()
-      setMetrics(data)
+      const result = await response.json()
+      const metricsData = result.data || {}
+      setMetrics(metricsData)
       
       // Add to history for charts
       setHistoryData(prev => {
         const newData = [...prev, {
           time: new Date().toLocaleTimeString(),
-          cpu: parseInt(data.cpu?.usedPercent) || 0,
-          memory: parseInt(data.memory?.usedPercent) || 0,
+          cpu: parseInt(metricsData.cpu?.usedPercent) || 0,
+          memory: parseInt(metricsData.memory?.usedPercent) || 0,
         }]
         // Keep only last 20 data points
         return newData.slice(-20)
@@ -61,8 +62,8 @@ function DeviceDetail() {
   const fetchLogs = async () => {
     try {
       const response = await fetch(`/api/devices/${id}/logs`)
-      const data = await response.json()
-      setLogs(data.logs || [])
+      const result = await response.json()
+      setLogs(result.data?.logs || [])
     } catch (error) {
       console.error('Error fetching logs:', error)
     }

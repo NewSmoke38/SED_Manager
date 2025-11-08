@@ -87,8 +87,8 @@ function Terminal() {
   const fetchDevice = async () => {
     try {
       const response = await fetch(`/api/devices/${id}`)
-      const data = await response.json()
-      setDevice(data)
+      const result = await response.json()
+      setDevice(result.data || null)
     } catch (error) {
       console.error('Error fetching device:', error)
       setError('Failed to load device information')

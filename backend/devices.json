@@ -1,0 +1,13 @@
+[
+  {
+    "id": "1",
+    "name": "Edge Device 1",
+    "host": "localhost",
+    "port": 2222,
+    "username": "root",
+    "password": "toor",
+    "description": "Primary edge device running on Docker",
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  }
+]
+

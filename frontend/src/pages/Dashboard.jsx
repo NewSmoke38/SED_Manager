@@ -17,11 +17,14 @@ function Dashboard() {
   const fetchDevices = async () => {
     try {
       const response = await fetch('/api/devices')
-      const data = await response.json()
-      setDevices(data)
+      const result = await response.json()
+      
+      // Extract the devices array from the response data
+      const devicesData = result.data || []
+      setDevices(devicesData)
       
       // Fetch metrics for each device
-      data.forEach(device => fetchDeviceMetrics(device.id))
+      devicesData.forEach(device => fetchDeviceMetrics(device.id))
       
       setLoading(false)
     } catch (error) {
@@ -33,8 +36,11 @@ function Dashboard() {
   const fetchDeviceMetrics = async (deviceId) => {
     try {
       const response = await fetch(`/api/devices/${deviceId}/metrics`)
-      const data = await response.json()
-      setDeviceMetrics(prev => ({ ...prev, [deviceId]: data }))
+      const result = await response.json()
+      
+      // Extract the metrics data from the response
+      const metricsData = result.data || {}
+      setDeviceMetrics(prev => ({ ...prev, [deviceId]: metricsData }))
     } catch (error) {
       console.error(`Error fetching metrics for device ${deviceId}:`, error)
     }

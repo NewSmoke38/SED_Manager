@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # First edge device
+  edge-device-1:
+    build: .
+    container_name: edge-device-1
+    ports:
+      - "2222:22"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "22"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Second edge device (optional - uncomment to use)
+  edge-device-2:
+    build: .
+    container_name: edge-device-2
+    ports:
+      - "2223:22"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "22"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Third edge device (optional - uncomment to use)
+  edge-device-3:
+    build: .
+    container_name: edge-device-3
+    ports:
+      - "2224:22"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "22"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+

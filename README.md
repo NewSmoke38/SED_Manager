@@ -1,300 +1,338 @@
-# 🔐 Secure Edge Device Manager
+# Secure Edge Device Manager
 
 A lightweight web platform to remotely monitor and manage simulated edge devices over SSH. Track real-time system metrics, online/offline health, network speeds, error logs, and enable live SSH sessions — all in one secure dashboard.
 
-## 🌟 Features
+## 🚀 Features
 
-- **📊 Real-time Monitoring**: View CPU, Memory, and Disk usage in real-time
-- **📈 Interactive Charts**: Beautiful visualizations of system metrics over time
-- **💻 Live SSH Terminal**: Full terminal access directly from your browser
-- **📝 System Logs**: Monitor error logs and system events
-- **🔄 Auto-refresh**: Metrics update automatically every 3-5 seconds
-- **🎨 Modern UI**: Beautiful dark theme with responsive design
-- **🐳 Docker-based**: Easy deployment with containerized edge devices
+- **Real-time Device Monitoring**: Track CPU, memory, disk usage, and network stats
+- **Live SSH Terminal**: Interactive terminal access to your edge devices
+- **System Logs**: View and analyze system logs in real-time
+- **Process Monitoring**: See top running processes with resource usage
+- **Multiple Device Management**: Manage and monitor multiple edge devices
+- **Beautiful Dashboard**: Modern, responsive UI with charts and metrics
+- **No Authentication Required**: All APIs work without login (as requested)
 
-## 🏗️ Architecture
+## 📋 Prerequisites
+
+- Node.js (v16 or higher)
+- Docker (for simulated edge devices)
+- npm or yarn
+
+## 🏗️ Project Structure
 
 ```
-┌─────────────────┐
-│  React Frontend │  (Port 3000)
-│   - Dashboard   │
-│   - Charts      │
-│   - Terminal    │
-└────────┬────────┘
-         │
-         │ HTTP/WebSocket
-         │
-┌────────▼────────┐
-│  Node.js API    │  (Port 3001)
-│  - Express      │
-│  - SSH2         │
-│  - WebSocket    │
-└────────┬────────┘
-         │
-         │ SSH (Port 2222)
-         │
-┌────────▼────────┐
-│ Docker Container│
-│  Alpine Linux   │
-│  + SSH Server   │
-└─────────────────┘
+sim-device/
+├── frontend/          # React + Vite frontend
+│   ├── src/
+│   │   ├── pages/     # Dashboard, DeviceDetail, Terminal pages
+│   │   └── components/
+│   └── package.json
+├── backend/           # Node.js + Express backend
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   └── utils/
+│   └── package.json
+├── Dockerfile         # Simulated edge device
+└── README.md
 ```
 
-## 🚀 Getting Started
+## 🔧 Setup Instructions
 
-### Prerequisites
+### 1. Start the Simulated Edge Device (Docker)
 
-- Node.js 18+ and npm
-- Docker Desktop
-- Terminal/Command Line access
-
-### 1. Start Your Simulated Edge Device
-
-First, make sure your Docker container is running (you've already done this!):
+First, build and run the Docker container that simulates an edge device:
 
 ```bash
-docker ps
+# Build the Docker image
+docker build -t edge-device .
+
+# Run the container (exposing SSH on port 2222)
+docker run -d -p 2222:22 --name edge-device-1 edge-device
+
+# Test SSH connection (password: toor)
+ssh root@localhost -p 2222
 ```
 
-You should see your container `my-edge-device-1` running on port 2222.
-
-### 2. Install Dependencies
-
-Install all dependencies for both backend and frontend:
-
-```bash
-# Install root dependencies
-npm install
-
-# Install backend dependencies
-cd backend
-npm install
-
-# Install frontend dependencies
-cd ../frontend
-npm install
-
-# Return to root
-cd ..
-```
-
-### 3. Configure Backend
-
-Create a `.env` file in the `backend` directory:
+### 2. Setup Backend
 
 ```bash
 cd backend
-cp .env.example .env
-```
 
-The default configuration should work with your existing Docker container:
+# Install dependencies
+npm install
 
-```env
-PORT=3001
-NODE_ENV=development
+# The .env file should already exist, but you can modify it if needed
+# Default ports: HTTP=8000, WebSocket=3001
 
-DEFAULT_SSH_HOST=localhost
-DEFAULT_SSH_PORT=2222
-DEFAULT_SSH_USER=root
-DEFAULT_SSH_PASSWORD=toor
-```
-
-### 4. Start the Application
-
-From the root directory, run:
-
-```bash
-# Start both backend and frontend
+# Start the backend server
 npm run dev
 ```
 
-This will start:
-- **Backend API** at `http://localhost:3001`
-- **Frontend** at `http://localhost:3000`
+The backend will start on:
+- **HTTP API**: http://localhost:8000
+- **WebSocket SSH**: ws://localhost:3001
 
-### 5. Access the Dashboard
-
-Open your browser and navigate to:
-
-```
-http://localhost:3000
-```
-
-You should see your edge device dashboard with real-time metrics!
-
-## 📱 Usage
-
-### Dashboard
-
-The main dashboard shows:
-- **Summary Cards**: Total devices, online/offline status, average CPU usage
-- **Device Cards**: Individual device information with metrics
-- **Quick Actions**: Access device details or open SSH terminal
-
-### Device Details
-
-Click "View Details" on any device to see:
-- **Real-time Charts**: CPU and memory usage over time
-- **System Information**: Detailed CPU, memory, and disk metrics
-- **Top Processes**: Currently running processes
-- **System Logs**: Recent system events and errors
-
-### SSH Terminal
-
-Click "SSH Terminal" to open a live terminal session:
-- Full interactive terminal in your browser
-- Execute commands directly on the edge device
-- Real-time command output
-- Use `exit` to close the SSH session
-
-## 🐳 Adding More Devices
-
-To add more simulated edge devices:
+### 3. Setup Frontend
 
 ```bash
-# Build the image if you haven't already
-docker build -t sim-device .
+cd frontend
 
-# Run additional containers on different ports
-docker run -d --name my-edge-device-2 -p 2223:22 sim-device:latest
-docker run -d --name my-edge-device-3 -p 2224:22 sim-device:latest
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
 ```
 
-Then add them through the API or modify `backend/routes/devices.js` to include them.
+The frontend will start on: http://localhost:3000
 
-## 🛠️ Development
+## 🎯 Usage
 
-### Backend Structure
+### Access the Dashboard
 
+1. Open your browser and go to http://localhost:3000
+2. You'll see the main dashboard with your edge devices
+3. Click **"View Details"** to see detailed metrics, charts, and logs
+4. Click **"SSH Terminal"** to open an interactive terminal session
+
+### Device Management
+
+The default device configuration:
+- **Name**: Edge Device 1
+- **Host**: localhost
+- **Port**: 2222
+- **Username**: root
+- **Password**: toor
+
+### Adding More Devices
+
+You can add more devices via API:
+
+```bash
+curl -X POST http://localhost:8000/api/devices \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Edge Device 2",
+    "host": "localhost",
+    "port": 2223,
+    "username": "root",
+    "password": "toor",
+    "description": "Secondary edge device"
+  }'
 ```
-backend/
-├── server.js              # Express server & WebSocket setup
-├── routes/
-│   └── devices.js         # API endpoints for devices
-├── services/
-│   ├── deviceService.js   # SSH commands & metric parsing
-│   └── sshTerminal.js     # WebSocket SSH terminal handler
-└── .env                   # Configuration
+
+Or run another Docker container:
+
+```bash
+docker run -d -p 2223:22 --name edge-device-2 edge-device
 ```
 
-### Frontend Structure
+## 📡 API Endpoints
 
-```
-frontend/
-├── src/
-│   ├── App.jsx            # Main app component & routing
-│   ├── pages/
-│   │   ├── Dashboard.jsx  # Device dashboard
-│   │   ├── DeviceDetail.jsx  # Detailed metrics view
-│   │   └── Terminal.jsx   # SSH terminal interface
-│   └── index.css          # Global styles
-└── vite.config.js         # Vite configuration
-```
+All endpoints are **unprotected** and work without authentication:
 
-### API Endpoints
-
+### Devices
 - `GET /api/devices` - List all devices
-- `GET /api/devices/:id` - Get device info
-- `GET /api/devices/:id/status` - Check if device is online
-- `GET /api/devices/:id/metrics` - Get all metrics
-- `GET /api/devices/:id/disk` - Get disk usage
-- `GET /api/devices/:id/memory` - Get memory usage
-- `GET /api/devices/:id/cpu` - Get CPU usage
-- `GET /api/devices/:id/logs` - Get system logs
-- `GET /api/devices/:id/network` - Get network stats
+- `GET /api/devices/:id` - Get device details
 - `POST /api/devices` - Add new device
+- `DELETE /api/devices/:id` - Remove device
 
-### WebSocket
+### Metrics
+- `GET /api/devices/:id/metrics` - Get real-time metrics
+  - CPU usage (user, system, load average)
+  - Memory usage (total, used, free, available)
+  - Disk usage (filesystems, mount points)
+  - Network statistics (RX/TX)
+  - Top processes
 
-- Connect to `ws://localhost:3001` for live SSH terminal
-- Send `{"type": "connect", "host": "...", "port": 2222, ...}` to establish SSH
-- Send `{"type": "input", "data": "command"}` to execute commands
+### Logs
+- `GET /api/devices/:id/logs` - Get system logs
 
-## 🎨 Customization
+### Health
+- `GET /api/health` - API health check
 
-### Change Theme Colors
+## 🔌 WebSocket Terminal
 
-Edit `frontend/src/index.css` to customize colors:
+The SSH terminal uses WebSocket for real-time communication:
 
-```css
-:root {
-  --primary: #3b82f6;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  /* ... */
+**Connection**: `ws://localhost:3001`
+
+**Message Types**:
+```javascript
+// Connect to device
+{
+  "type": "connect",
+  "host": "localhost",
+  "port": 2222,
+  "username": "root",
+  "password": "toor"
+}
+
+// Send input
+{
+  "type": "input",
+  "data": "ls -la\n"
+}
+
+// Resize terminal
+{
+  "type": "resize",
+  "rows": 24,
+  "cols": 80
 }
 ```
 
-### Add More Metrics
+## 🎨 Features Showcase
 
-1. Add a new function in `backend/services/deviceService.js`
-2. Create an API endpoint in `backend/routes/devices.js`
-3. Fetch and display in the frontend
+### Dashboard
+- Total devices count
+- Online/offline status
+- Average CPU usage across all devices
+- Device cards with real-time metrics
 
-## 📦 Production Build
+### Device Details
+- Real-time CPU & Memory charts
+- Detailed metrics breakdown
+- Disk usage with progress bars
+- Top processes table
+- System logs viewer
 
-```bash
-# Build frontend
-cd frontend
-npm run build
+### SSH Terminal
+- Full interactive terminal
+- Color-coded output
+- Auto-resizing
+- Real-time command execution
 
-# Start production server
-cd ../backend
-NODE_ENV=production node server.js
-```
+## 🛠️ Technologies Used
 
-The built frontend files will be in `frontend/dist/`.
+### Frontend
+- React 18
+- Vite
+- React Router
+- Recharts (for graphs)
+- XTerm.js (for terminal)
+- Lucide React (icons)
+- Axios
+
+### Backend
+- Node.js
+- Express
+- SSH2 (SSH client)
+- WebSocket (ws)
+- CORS
+
+### DevOps
+- Docker
+- Alpine Linux
+- OpenSSH Server
 
 ## 🔒 Security Notes
 
-**⚠️ This is a development/demo application!**
+⚠️ **Important**: This setup is for **development and testing only**:
 
-For production use, consider:
-- Store SSH credentials securely (not in plain text)
-- Use environment variables or a secrets manager
-- Implement authentication for the web interface
-- Use HTTPS/WSS for encrypted connections
-- Validate and sanitize all inputs
-- Implement rate limiting
-- Use SSH keys instead of passwords
+- APIs are unprotected (no authentication required)
+- SSH credentials are hardcoded
+- Default passwords are used
+- Not suitable for production use
+
+For production:
+1. Add proper authentication and authorization
+2. Use SSH keys instead of passwords
+3. Implement rate limiting
+4. Add input validation and sanitization
+5. Use environment variables for sensitive data
+6. Enable HTTPS/WSS
 
 ## 🐛 Troubleshooting
 
-### Can't connect to device
+### Docker container not starting
+```bash
+# Check container status
+docker ps -a
 
-- Ensure Docker container is running: `docker ps`
-- Check SSH is accessible: `ssh root@localhost -p 2222`
-- Verify credentials in `.env` file
+# View container logs
+docker logs edge-device-1
 
-### WebSocket connection fails
+# Restart container
+docker restart edge-device-1
+```
 
-- Check backend is running on port 3001
-- Ensure no firewall blocking WebSocket connections
-- Check browser console for errors
+### SSH connection fails
+```bash
+# Test SSH manually
+ssh root@localhost -p 2222
 
-### Metrics not updating
+# Check if port is open
+nc -zv localhost 2222
+```
 
-- Verify device is online
-- Check network connectivity
-- Look at backend logs for SSH errors
+### Backend errors
+```bash
+# Check backend logs
+cd backend
+npm run dev
 
-## 📝 License
+# Verify dependencies
+npm install
+```
 
-MIT
+### Frontend not loading
+```bash
+# Clear cache and reinstall
+cd frontend
+rm -rf node_modules package-lock.json
+npm install
+npm run dev
+```
 
-## 🙏 Credits
+## 📝 Development
 
-Built with:
-- [React](https://reactjs.org/) - Frontend framework
-- [Express](https://expressjs.com/) - Backend API
-- [ssh2](https://github.com/mscdex/ssh2) - SSH client
-- [xterm.js](https://xtermjs.org/) - Terminal emulator
-- [Recharts](https://recharts.org/) - Charts library
-- [Lucide Icons](https://lucide.dev/) - Icon library
+### Backend Development
+```bash
+cd backend
+npm run dev  # Auto-reload with nodemon
+```
+
+### Frontend Development
+```bash
+cd frontend
+npm run dev  # Hot module replacement
+```
+
+### Build for Production
+```bash
+# Frontend
+cd frontend
+npm run build
+
+# Backend (no build needed, runs directly)
+cd backend
+npm start
+```
+
+## 🤝 Contributing
+
+Feel free to:
+- Add more device metrics
+- Improve the UI/UX
+- Add authentication features
+- Implement persistent storage (MongoDB)
+- Add device grouping and tagging
+- Create alerts and notifications
+
+## 📄 License
+
+MIT License - feel free to use this project for learning and development purposes.
+
+## 🎓 Learning Resources
+
+- [SSH2 Documentation](https://github.com/mscdex/ssh2)
+- [XTerm.js Guide](https://xtermjs.org/)
+- [WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
+- [Docker SSH Setup](https://docs.docker.com/engine/reference/builder/)
 
 ---
 
-**Happy Monitoring! 🚀**
-
-
+Built with ❤️ for edge computing enthusiasts!
