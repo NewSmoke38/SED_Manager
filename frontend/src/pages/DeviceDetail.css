@@ -1,0 +1,253 @@
+.device-detail {
+  width: 100%;
+}
+
+.detail-header {
+  margin-bottom: 2rem;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-bottom: 1rem;
+  transition: color 0.2s;
+}
+
+.back-button:hover {
+  color: var(--primary);
+}
+
+.detail-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.detail-header-content h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.device-connection {
+  color: var(--text-secondary);
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.charts-section {
+  margin-bottom: 2rem;
+}
+
+.metric-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.metric-row .metric-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.metric-row .metric-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.disk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.disk-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.disk-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.disk-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+.disk-mount {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.disk-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.disk-bar {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.disk-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+  transition: width 0.3s;
+}
+
+.disk-values {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.disk-percent {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.process-table {
+  overflow-x: auto;
+}
+
+.process-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.process-table th {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 2px solid var(--border);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.process-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.process-command {
+  font-family: monospace;
+  color: var(--text-secondary);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logs-container {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.log-entry {
+  padding: 0.75rem;
+  border-radius: 6px;
+  display: flex;
+  gap: 1rem;
+  font-family: monospace;
+  font-size: 0.875rem;
+  border-left: 3px solid;
+}
+
+.log-info {
+  background: rgba(59, 130, 246, 0.1);
+  border-left-color: var(--primary);
+}
+
+.log-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-left-color: var(--warning);
+}
+
+.log-error {
+  background: rgba(239, 68, 68, 0.1);
+  border-left-color: var(--error);
+}
+
+.log-level {
+  font-weight: 600;
+  text-transform: uppercase;
+  min-width: 60px;
+}
+
+.log-message {
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+.offline-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  gap: 1rem;
+}
+
+.offline-message h3 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.offline-message p {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .detail-header-content {
+    flex-direction: column;
+  }
+  
+  .detail-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+
