@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Activity, HardDrive, Cpu, FileText, Terminal, Shield } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
@@ -115,11 +115,10 @@ function DeviceDetail() {
   }
 
   const isOnline = metrics?.status?.online
-  const isWindowsDevice = Boolean(
-    metrics?.disk?.filesystems?.some(
-      (fs) => typeof fs.filesystem === 'string' && fs.filesystem.includes(':')
-    )
-  )
+  const isWindowsDevice = useMemo(() => {
+    if (!metrics?.disk?.filesystems) return false
+    return metrics.disk.filesystems.some(fs => typeof fs.filesystem === 'string' && fs.filesystem.includes(':'))
+  }, [metrics])
 
   const renderFirewallProfiles = () => {
     if (!firewallStatus) return null
