@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Activity, HardDrive, Cpu, Network, FileText, Terminal } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
+import { ArrowLeft, Activity, HardDrive, Cpu, FileText, Terminal, Shield } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import './DeviceDetail.css'
 
 function DeviceDetail() {
@@ -11,6 +11,10 @@ function DeviceDetail() {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [historyData, setHistoryData] = useState([])
+  const [firewallLoading, setFirewallLoading] = useState(null)
+  const [firewallStatus, setFirewallStatus] = useState(null)
+  const [firewallMessage, setFirewallMessage] = useState(null)
+  const [firewallError, setFirewallError] = useState(null)
 
   useEffect(() => {
     fetchDevice()
@@ -69,6 +73,39 @@ function DeviceDetail() {
     }
   }
 
+  const handleFirewallAction = async (action) => {
+    if (!device) return
+    setFirewallLoading(action)
+    setFirewallError(null)
+    setFirewallMessage(null)
+
+    try {
+      const response = await fetch(`/api/devices/${id}/windows/firewall`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action,
+          profile: 'all'
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result?.message || 'Failed to update firewall')
+      }
+
+      setFirewallStatus(result?.data?.parsedStatus || null)
+      setFirewallMessage(result?.message || `Firewall ${action}d successfully`)
+    } catch (error) {
+      setFirewallError(error.message)
+    } finally {
+      setFirewallLoading(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -78,6 +115,31 @@ function DeviceDetail() {
   }
 
   const isOnline = metrics?.status?.online
+  const isWindowsDevice = Boolean(
+    metrics?.disk?.filesystems?.some(
+      (fs) => typeof fs.filesystem === 'string' && fs.filesystem.includes(':')
+    )
+  )
+
+  const renderFirewallProfiles = () => {
+    if (!firewallStatus) return null
+
+    const profiles = Object.entries(firewallStatus)
+    if (!profiles.length) return null
+
+    return (
+      <div className="firewall-status">
+        {profiles.map(([profile, info]) => (
+          <div key={profile} className="firewall-status-row">
+            <span className="firewall-profile">{profile}</span>
+            <span className={`firewall-state firewall-state-${info?.state === 'on' ? 'on' : 'off'}`}>
+              {info?.state || 'unknown'}
+            </span>
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="device-detail">
@@ -100,8 +162,35 @@ function DeviceDetail() {
               <Terminal size={18} />
               Open Terminal
             </Link>
+            {isWindowsDevice && (
+              <div className="firewall-controls">
+                <button
+                  className="btn btn-secondary"
+                  disabled={!isOnline || firewallLoading === 'enable'}
+                  onClick={() => handleFirewallAction('enable')}
+                >
+                  <Shield size={16} />
+                  {firewallLoading === 'enable' ? 'Enabling...' : 'Enable Firewall'}
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  disabled={!isOnline || firewallLoading === 'disable'}
+                  onClick={() => handleFirewallAction('disable')}
+                >
+                  <Shield size={16} />
+                  {firewallLoading === 'disable' ? 'Disabling...' : 'Disable Firewall'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
+        {(firewallMessage || firewallError || firewallStatus) && (
+          <div className="firewall-feedback">
+            {firewallMessage && <div className="firewall-message success">{firewallMessage}</div>}
+            {firewallError && <div className="firewall-message error">{firewallError}</div>}
+            {renderFirewallProfiles()}
+          </div>
+        )}
       </div>
 
       {isOnline && metrics && (

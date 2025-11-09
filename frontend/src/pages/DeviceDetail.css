@@ -47,6 +47,73 @@
   gap: 1rem;
 }
 
+.firewall-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.firewall-feedback {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.firewall-message {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.firewall-message.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.firewall-message.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.firewall-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.firewall-status-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.firewall-profile {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.firewall-state {
+  font-weight: 600;
+}
+
+.firewall-state-on {
+  color: var(--success);
+}
+
+.firewall-state-off {
+  color: var(--error);
+}
+
 .charts-section {
   margin-bottom: 2rem;
 }
@@ -247,6 +314,13 @@
   .detail-header-actions {
     width: 100%;
     justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .firewall-controls {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
   }
 }
 
