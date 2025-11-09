@@ -9,13 +9,9 @@ dotenv.config({
 
 const startServer = async () => {
   try {
-    // Connect to MongoDB (optional - devices can work without it)
-    try {
-      await connectDB();
-      console.log("MongoDB connected successfully");
-    } catch (dbError) {
-      console.log("MongoDB connection skipped - using in-memory storage");
-    }
+    // Connect to MongoDB (required for device storage)
+    await connectDB();
+    console.log("✅ MongoDB connected successfully");
 
     app.on("error", (error) => {   
       console.log("ERROR", error);
@@ -27,6 +23,7 @@ const startServer = async () => {
     app.listen(PORT, () => {   
       console.log(`\n🚀 HTTP Server is running at port: ${PORT}`);
       console.log(`   API: http://localhost:${PORT}/api/devices`);
+      console.log(`   Dashboard: http://localhost:3000`);
     });
 
     // Start WebSocket server for SSH terminals

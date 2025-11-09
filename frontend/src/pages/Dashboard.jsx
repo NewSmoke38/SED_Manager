@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Activity, HardDrive, Cpu, Server } from 'lucide-react'
+import { Activity, HardDrive, Cpu, Server, Plus, Trash2 } from 'lucide-react'
+import AddDeviceModal from '../components/AddDeviceModal'
 import './Dashboard.css'
 
 function Dashboard() {
   const [devices, setDevices] = useState([])
   const [loading, setLoading] = useState(true)
   const [deviceMetrics, setDeviceMetrics] = useState({})
+  const [showAddModal, setShowAddModal] = useState(false)
 
   useEffect(() => {
     fetchDevices()
@@ -54,12 +56,55 @@ function Dashboard() {
     )
   }
 
+  const handleDeviceAdded = () => {
+    // Refresh the device list
+    fetchDevices()
+  }
+
+  const handleDeleteDevice = async (deviceId, deviceName) => {
+    if (!confirm(`Are you sure you want to delete "${deviceName}"?`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/devices/${deviceId}`, {
+        method: 'DELETE'
+      })
+      const result = await response.json()
+
+      if (result.success) {
+        // Refresh the device list
+        fetchDevices()
+      } else {
+        alert('Failed to delete device: ' + result.message)
+      }
+    } catch (error) {
+      console.error('Error deleting device:', error)
+      alert('Failed to delete device')
+    }
+  }
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h2>Device Dashboard</h2>
-        <p className="dashboard-subtitle">Monitor and manage your edge devices</p>
+        <div>
+          <h2>Device Dashboard</h2>
+          <p className="dashboard-subtitle">Monitor and manage your edge devices</p>
+        </div>
+        <button 
+          className="btn btn-primary btn-add-device"
+          onClick={() => setShowAddModal(true)}
+        >
+          <Plus size={20} />
+          Add Device
+        </button>
       </div>
+
+      <AddDeviceModal 
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onDeviceAdded={handleDeviceAdded}
+      />
 
       {/* Summary Cards */}
       <div className="summary-grid grid grid-cols-4">
@@ -120,23 +165,46 @@ function Dashboard() {
       {/* Device List */}
       <div className="devices-section">
         <h3>Devices</h3>
-        <div className="grid grid-cols-1">
-          {devices.map(device => {
-            const metrics = deviceMetrics[device.id]
-            const isOnline = metrics?.status?.online
+        {devices.length === 0 ? (
+          <div className="no-devices card">
+            <Server size={48} color="#64748b" />
+            <h3>No Devices Found</h3>
+            <p>Add your first device to start monitoring</p>
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowAddModal(true)}
+            >
+              <Plus size={20} />
+              Add Device
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1">
+            {devices.map(device => {
+              const metrics = deviceMetrics[device.id]
+              const isOnline = metrics?.status?.online
 
-            return (
-              <div key={device.id} className="device-card card">
-                <div className="device-card-header">
-                  <div>
-                    <h4 className="device-name">{device.name}</h4>
-                    <p className="device-location">{device.host}:{device.port}</p>
+              return (
+                <div key={device.id} className="device-card card">
+                  <div className="device-card-header">
+                    <div>
+                      <h4 className="device-name">{device.name}</h4>
+                      <p className="device-location">{device.host}:{device.port}</p>
+                    </div>
+                    <div className="device-header-actions">
+                      <span className={`badge ${isOnline ? 'badge-online' : 'badge-offline'}`}>
+                        <span className="status-dot"></span>
+                        {isOnline ? 'Online' : 'Offline'}
+                      </span>
+                      <button 
+                        className="btn-icon btn-danger"
+                        onClick={() => handleDeleteDevice(device.id, device.name)}
+                        title="Delete device"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
-                  <span className={`badge ${isOnline ? 'badge-online' : 'badge-offline'}`}>
-                    <span className="status-dot"></span>
-                    {isOnline ? 'Online' : 'Offline'}
-                  </span>
-                </div>
 
                 {metrics && isOnline && (
                   <div className="device-metrics">
@@ -185,7 +253,8 @@ function Dashboard() {
               </div>
             )
           })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )

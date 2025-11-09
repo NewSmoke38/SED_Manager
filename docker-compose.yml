@@ -1,6 +1,23 @@
 version: '3.8'
 
 services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:latest
+    container_name: edge-manager-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: edge-device-manager
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # First edge device
   edge-device-1:
     build: .
@@ -14,7 +31,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Second edge device (optional - uncomment to use)
+  # Second edge device
   edge-device-2:
     build: .
     container_name: edge-device-2
@@ -28,15 +45,18 @@ services:
       retries: 3
 
   # Third edge device (optional - uncomment to use)
-  edge-device-3:
-    build: .
-    container_name: edge-device-3
-    ports:
-      - "2224:22"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "22"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+  # edge-device-3:
+  #   build: .
+  #   container_name: edge-device-3
+  #   ports:
+  #     - "2224:22"
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "nc", "-z", "localhost", "22"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
 
+volumes:
+  mongodb_data:
+    driver: local

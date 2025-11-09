@@ -2,30 +2,7 @@ import { Client } from 'ssh2';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
-
-// In-memory device storage (you can replace this with MongoDB if needed)
-let devices = [
-  {
-    id: '1',
-    name: 'Edge Device 1 (Docker)',
-    host: 'localhost',
-    port: 2222,
-    username: 'root',
-    password: 'toor',
-    description: 'Primary edge device running on Docker',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Gaurav\'s Windows Laptop',
-    host: '192.168.0.142',
-    port: 22,
-    username: 'Gaurav Sharma',
-    password: 'ReynaSage11@',
-    description: 'Windows laptop with OpenSSH enabled',
-    createdAt: new Date().toISOString()
-  }
-];
+import Device from '../models/device.model.js';
 
 // Helper function to execute SSH command
 const executeSSHCommand = (device, command) => {
@@ -419,27 +396,67 @@ const parseNetworkInfo = (output) => {
 
 // Get all devices
 export const getDevices = asyncHandler(async (req, res) => {
-  res.status(200).json(new ApiResponse(200, devices, 'Devices retrieved successfully'));
+  const devices = await Device.find().sort({ createdAt: -1 });
+  
+  // Transform to match frontend expectations
+  const devicesData = devices.map(device => ({
+    id: device._id.toString(),
+    name: device.name,
+    host: device.host,
+    port: device.port,
+    username: device.username,
+    password: device.password,
+    description: device.description,
+    createdAt: device.createdAt,
+    status: device.status,
+    lastSeen: device.lastSeen
+  }));
+  
+  res.status(200).json(new ApiResponse(200, devicesData, 'Devices retrieved successfully'));
 });
 
 // Get single device
 export const getDevice = asyncHandler(async (req, res) => {
-  const device = devices.find(d => d.id === req.params.id);
+  const device = await Device.findById(req.params.id);
   
   if (!device) {
     throw new ApiError(404, 'Device not found');
   }
   
-  res.status(200).json(new ApiResponse(200, device, 'Device retrieved successfully'));
+  const deviceData = {
+    id: device._id.toString(),
+    name: device.name,
+    host: device.host,
+    port: device.port,
+    username: device.username,
+    password: device.password,
+    description: device.description,
+    createdAt: device.createdAt,
+    status: device.status,
+    lastSeen: device.lastSeen
+  };
+  
+  res.status(200).json(new ApiResponse(200, deviceData, 'Device retrieved successfully'));
 });
 
 // Get device metrics
 export const getDeviceMetrics = asyncHandler(async (req, res) => {
-  const device = devices.find(d => d.id === req.params.id);
+  const dbDevice = await Device.findById(req.params.id);
   
-  if (!device) {
+  if (!dbDevice) {
     throw new ApiError(404, 'Device not found');
   }
+  
+  // Transform to plain object for SSH operations
+  const device = {
+    id: dbDevice._id.toString(),
+    name: dbDevice.name,
+    host: dbDevice.host,
+    port: dbDevice.port,
+    username: dbDevice.username,
+    password: dbDevice.password,
+    description: dbDevice.description
+  };
   
   try {
     // Check device status first
@@ -495,9 +512,21 @@ export const getDeviceMetrics = asyncHandler(async (req, res) => {
       };
     }
     
+    // Update device status in database
+    await Device.findByIdAndUpdate(req.params.id, {
+      status: metrics.status.online ? 'online' : 'offline',
+      lastSeen: metrics.status.lastSeen
+    });
+    
     res.status(200).json(new ApiResponse(200, metrics, 'Metrics retrieved successfully'));
   } catch (error) {
     console.error('Error collecting metrics:', error);
+    
+    // Update device status as offline
+    await Device.findByIdAndUpdate(req.params.id, {
+      status: 'offline'
+    });
+    
     res.status(200).json(new ApiResponse(200, {
       status: { online: false, error: error.message },
       timestamp: new Date().toISOString()
@@ -507,11 +536,19 @@ export const getDeviceMetrics = asyncHandler(async (req, res) => {
 
 // Get device logs
 export const getDeviceLogs = asyncHandler(async (req, res) => {
-  const device = devices.find(d => d.id === req.params.id);
+  const dbDevice = await Device.findById(req.params.id);
   
-  if (!device) {
+  if (!dbDevice) {
     throw new ApiError(404, 'Device not found');
   }
+  
+  // Transform to plain object for SSH operations
+  const device = {
+    host: dbDevice.host,
+    port: dbDevice.port,
+    username: dbDevice.username,
+    password: dbDevice.password
+  };
   
   try {
     // Try to get system logs (dmesg or syslog)
@@ -557,34 +594,41 @@ export const addDevice = asyncHandler(async (req, res) => {
   const { name, host, port, username, password, description } = req.body;
   
   if (!name || !host || !port || !username || !password) {
-    throw new ApiError(400, 'All fields are required');
+    throw new ApiError(400, 'All required fields must be provided');
   }
   
-  const newDevice = {
-    id: String(devices.length + 1),
+  const device = await Device.create({
     name,
     host,
     port: parseInt(port),
     username,
     password,
     description: description || '',
-    createdAt: new Date().toISOString()
+    status: 'unknown'
+  });
+  
+  const deviceData = {
+    id: device._id.toString(),
+    name: device.name,
+    host: device.host,
+    port: device.port,
+    username: device.username,
+    password: device.password,
+    description: device.description,
+    createdAt: device.createdAt,
+    status: device.status
   };
   
-  devices.push(newDevice);
-  
-  res.status(201).json(new ApiResponse(201, newDevice, 'Device added successfully'));
+  res.status(201).json(new ApiResponse(201, deviceData, 'Device added successfully'));
 });
 
 // Delete device
 export const deleteDevice = asyncHandler(async (req, res) => {
-  const index = devices.findIndex(d => d.id === req.params.id);
+  const device = await Device.findByIdAndDelete(req.params.id);
   
-  if (index === -1) {
+  if (!device) {
     throw new ApiError(404, 'Device not found');
   }
-  
-  devices.splice(index, 1);
   
   res.status(200).json(new ApiResponse(200, null, 'Device deleted successfully'));
 });

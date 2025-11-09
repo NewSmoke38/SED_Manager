@@ -3,6 +3,9 @@
 }
 
 .dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 2rem;
 }
 
@@ -16,6 +19,26 @@
 .dashboard-subtitle {
   color: var(--text-secondary);
   font-size: 1rem;
+}
+
+.btn-add-device {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 12px 24px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .btn-add-device {
+    width: 100%;
+  }
 }
 
 .summary-grid {
@@ -132,6 +155,60 @@
   gap: 0.75rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
+}
+
+/* No devices state */
+.no-devices {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  gap: 1rem;
+}
+
+.no-devices h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+}
+
+.no-devices p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* Device header actions */
+.device-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Icon buttons */
+.btn-icon {
+  background: none;
+  border: 1px solid transparent;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  color: #ef4444;
 }
 
 @media (max-width: 768px) {
