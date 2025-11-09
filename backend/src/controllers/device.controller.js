@@ -4,7 +4,6 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
 import Device from '../models/device.model.js';
 
-// Helper function to execute SSH command
 const executeSSHCommand = (device, command) => {
   return new Promise((resolve, reject) => {
     const conn = new Client();
@@ -43,7 +42,6 @@ const executeSSHCommand = (device, command) => {
   });
 };
 
-// Helper function to detect OS type
 const detectOS = async (device) => {
   try {
     const output = await executeSSHCommand(device, 'uname -s 2>/dev/null || echo Windows');
@@ -65,7 +63,6 @@ const detectOS = async (device) => {
   }
 };
 
-// Helper function to check device online status
 const checkDeviceStatus = async (device) => {
   try {
     await executeSSHCommand(device, 'echo "ping"');
@@ -226,6 +223,34 @@ const parseWindowsDisk = (output) => {
     console.error('Error parsing Windows disk:', e);
     return { filesystems: [] };
   }
+};
+
+const parseWindowsFirewallStatus = (output) => {
+  const result = {};
+  const lines = output.split('\n');
+  let currentProfile = null;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const profileMatch = line.match(/^(Domain|Private|Public)\s+Profile Settings/i);
+    if (profileMatch) {
+      currentProfile = profileMatch[1].toLowerCase();
+      if (!result[currentProfile]) {
+        result[currentProfile] = {};
+      }
+      continue;
+    }
+
+    if (currentProfile && line.toLowerCase().startsWith('state')) {
+      const parts = line.split(/\s+/);
+      const state = parts.slice(1).join(' ').toLowerCase();
+      result[currentProfile].state = state;
+    }
+  }
+
+  return result;
 };
 
 // Linux-specific parsers
@@ -590,6 +615,79 @@ export const getDeviceLogs = asyncHandler(async (req, res) => {
 });
 
 // Add new device
+
+export const updateWindowsFirewall = asyncHandler(async (req, res) => {
+  const { action, profile } = req.body;
+
+  if (!action) {
+    throw new ApiError(400, 'Action is required (enable or disable)');
+  }
+
+  const normalizedAction = action.toLowerCase();
+
+  if (!['enable', 'disable'].includes(normalizedAction)) {
+    throw new ApiError(400, 'Invalid action. Use "enable" or "disable".');
+  }
+
+  const profileKey = (profile || 'all').toLowerCase();
+  const profileMap = {
+    all: 'allprofiles',
+    domain: 'domainprofile',
+    private: 'privateprofile',
+    public: 'publicprofile'
+  };
+
+  if (!profileMap[profileKey]) {
+    throw new ApiError(400, 'Invalid profile. Use all, domain, private, or public.');
+  }
+
+  const dbDevice = await Device.findById(req.params.id);
+
+  if (!dbDevice) {
+    throw new ApiError(404, 'Device not found');
+  }
+
+  const device = {
+    host: dbDevice.host,
+    port: dbDevice.port,
+    username: dbDevice.username,
+    password: dbDevice.password
+  };
+
+  const osType = await detectOS(device);
+
+  if (osType !== 'windows') {
+    throw new ApiError(400, 'Firewall management is only supported for Windows devices.');
+  }
+
+  const desiredState = normalizedAction === 'enable' ? 'on' : 'off';
+  const targetProfile = profileMap[profileKey];
+
+  let commandOutput = '';
+  try {
+    commandOutput = await executeSSHCommand(device, `netsh advfirewall set ${targetProfile} state ${desiredState}`);
+  } catch (error) {
+    throw new ApiError(500, `Failed to update Windows Firewall: ${error.message}`);
+  }
+
+  let statusOutput = '';
+  let parsedStatus = null;
+  try {
+    statusOutput = await executeSSHCommand(device, 'netsh advfirewall show allprofiles');
+    parsedStatus = parseWindowsFirewallStatus(statusOutput);
+  } catch (error) {
+    statusOutput = '';
+  }
+
+  res.status(200).json(new ApiResponse(200, {
+    action: normalizedAction,
+    profile: profileKey,
+    commandOutput: commandOutput.trim(),
+    statusOutput: statusOutput.trim(),
+    parsedStatus
+  }, `Windows Firewall ${normalizedAction}d successfully`));
+});
+
 export const addDevice = asyncHandler(async (req, res) => {
   const { name, host, port, username, password, description } = req.body;
   

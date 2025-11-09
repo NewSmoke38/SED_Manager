@@ -44,11 +44,10 @@ const deviceSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    autoIndex: true // Ensure proper index management
+    autoIndex: true 
   }
 );
 
-// Remove any old indexes and create new ones
 // Note: Only indexes defined here will be kept
 deviceSchema.index({ host: 1, port: 1 }, { unique: false });
 
