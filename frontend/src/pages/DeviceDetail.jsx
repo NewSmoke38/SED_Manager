@@ -16,6 +16,11 @@ function DeviceDetail() {
   const [firewallMessage, setFirewallMessage] = useState(null)
   const [firewallError, setFirewallError] = useState(null)
 
+  const isWindowsDevice = useMemo(() => {
+    if (!metrics?.disk?.filesystems) return false
+    return metrics.disk.filesystems.some(fs => typeof fs.filesystem === 'string' && fs.filesystem.includes(':'))
+  }, [metrics])
+
   useEffect(() => {
     fetchDevice()
     fetchMetrics()
@@ -115,10 +120,6 @@ function DeviceDetail() {
   }
 
   const isOnline = metrics?.status?.online
-  const isWindowsDevice = useMemo(() => {
-    if (!metrics?.disk?.filesystems) return false
-    return metrics.disk.filesystems.some(fs => typeof fs.filesystem === 'string' && fs.filesystem.includes(':'))
-  }, [metrics])
 
   const renderFirewallProfiles = () => {
     if (!firewallStatus) return null
