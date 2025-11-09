@@ -20,9 +20,9 @@ This document explains the architecture and design of the Secure Edge Device Man
 │  (React/Vite)   │  │  Server          │
 │  Port 3000      │  │  Port 3001       │
 └─────────────────┘  └────────┬─────────┘
-         │                     │
-         │ API Proxy           │ SSH2
-         ▼                     │
+         │                    │
+         │ API Proxy          │ SSH2
+         ▼                    │
 ┌─────────────────┐           │
 │  Backend API    │           │
 │  (Express)      │───────────┘

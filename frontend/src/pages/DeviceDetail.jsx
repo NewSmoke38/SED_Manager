@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Activity, HardDrive, Cpu, FileText, Terminal, Shield } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import './DeviceDetail.css'
 
 function DeviceDetail() {
@@ -52,10 +52,14 @@ function DeviceDetail() {
       
       // Add to history for charts
       setHistoryData(prev => {
+        const load1 = parseFloat(metricsData.cpu?.loadAverage?.['1min']) || 0
+        const load5 = parseFloat(metricsData.cpu?.loadAverage?.['5min']) || 0
         const newData = [...prev, {
           time: new Date().toLocaleTimeString(),
           cpu: parseInt(metricsData.cpu?.usedPercent) || 0,
           memory: parseInt(metricsData.memory?.usedPercent) || 0,
+          load1,
+          load5,
         }]
         // Keep only last 20 data points
         return newData.slice(-20)
@@ -235,6 +239,44 @@ function DeviceDetail() {
                 </ResponsiveContainer>
               </div>
             </div>
+            {/* Load Average Trends */}
+            <div className="card" style={{ marginTop: '1rem' }}>
+              <div className="card-header">
+                <h3 className="card-title">
+                  <Activity size={20} />
+                  Load Average (1m & 5m)
+                </h3>
+              </div>
+              <div className="card-content">
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={historyData}>
+                    <defs>
+                      <linearGradient id="colorLoad1" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorLoad5" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                    <XAxis dataKey="time" stroke="#94a3b8" />
+                    <YAxis stroke="#94a3b8" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: '#1e293b', 
+                        border: '1px solid #334155',
+                        borderRadius: '8px'
+                      }} 
+                    />
+                    <Legend />
+                    <Area type="monotone" dataKey="load1" name="1m" stroke="#f59e0b" fillOpacity={1} fill="url(#colorLoad1)" />
+                    <Area type="monotone" dataKey="load5" name="5m" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorLoad5)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
 
           {/* Metrics Grid */}
@@ -395,6 +437,53 @@ function DeviceDetail() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Network Activity */}
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">
+                <Activity size={20} />
+                Network Activity
+              </h3>
+            </div>
+            <div className="card-content">
+              {Array.isArray(metrics.network?.interfaces) && metrics.network.interfaces.length > 0 ? (
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart
+                    layout="vertical"
+                    data={metrics.network.interfaces.filter(i => i.name !== 'lo').map(i => ({
+                      name: i.name,
+                      rxMB: typeof i.rx === 'string' ? parseFloat(i.rx) || 0 : (i.rx || 0),
+                      txMB: typeof i.tx === 'string' ? parseFloat(i.tx) || 0 : (i.tx || 0),
+                    }))}
+                    margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                    <XAxis type="number" stroke="#94a3b8" tickFormatter={(v) => `${v} MB`} />
+                    <YAxis type="category" dataKey="name" stroke="#94a3b8" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: '#1e293b', 
+                        border: '1px solid #334155',
+                        borderRadius: '8px'
+                      }}
+                      formatter={(value, name) => [`${value} MB`, name === 'rxMB' ? 'RX' : 'TX']}
+                    />
+                    <Legend />
+                    <Bar dataKey="rxMB" name="RX" fill="#3b82f6" />
+                    <Bar dataKey="txMB" name="TX" fill="#10b981" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="metric-details">
+                  <div className="metric-row">
+                    <span className="metric-label">Interfaces</span>
+                    <span className="metric-value">No network data</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </>
